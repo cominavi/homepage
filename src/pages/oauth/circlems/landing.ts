@@ -66,7 +66,24 @@ export const GET: APIRoute = async ({ request, locals }) => {
     }),
   });
 
-  const json: AuthorizationCodeResponse = await response.json();
+  const text = await response.text();
+  if (
+    !response.ok ||
+    response.headers.get("Content-Type") !== "application/json"
+  ) {
+    console.error(
+      "Failed to fetch token: server responded with non-JSON content. status:",
+      response.status,
+      "content:",
+      text,
+    );
+    return Response.redirect(
+      `cominavi://oauth/circlems/landing?status=failed&error=invalid_server_response_text`,
+      307,
+    );
+  }
+
+  const json = JSON.parse(text);
   if (isAuthorizationCodeResponse(json)) {
     const s = new URLSearchParams();
     s.set("status", "succeeded");
