@@ -1,0 +1,7 @@
+name = "cominavi-homepage"
+pages_build_output_dir = "dist"
+
+[vars]
+COMINAVI_CIRCLEMS_DOMAIN = "auth1-sandbox.circle.ms"
+COMINAVI_OAUTH_CIRCLEMS_CLIENT_ID = ""
+COMINAVI_OAUTH_CIRCLEMS_CLIENT_SECRET = ""
