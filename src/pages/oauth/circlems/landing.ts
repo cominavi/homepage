@@ -2,24 +2,37 @@ import type { APIRoute } from "astro";
 
 export const prerender = false;
 
-export interface AuthorizationCodeResponse {
+export interface AuthorizationCodeSuccessResponse {
   access_token: string;
-  token_type: string;
-  expires_in: string;
   refresh_token: string;
+  token_type: string;
+  expires_in: unknown;
 }
 
-function isAuthorizationCodeResponse(
+function isAuthorizationCodeSuccessResponse(
   response: any,
-): response is AuthorizationCodeResponse {
+): response is AuthorizationCodeSuccessResponse {
   return (
     typeof response === "object" &&
     typeof response.access_token === "string" &&
     typeof response.token_type === "string" &&
-    typeof response.expires_in === "string" &&
-    typeof response.refresh_token === "string"
+    typeof response.refresh_token === "string" &&
+    Object.hasOwn(response, "expires_in")
   );
 }
+
+interface AuthorizationCodeErrorResponse {
+  error: string;
+  error_description?: string;
+  error_uri?: string;
+}
+
+function isAuthorizationCodeErrorResponse(
+  response: any,
+): response is AuthorizationCodeErrorResponse {
+  return typeof response === "object" && typeof response.error === "string";
+}
+
 function verifyCirclemsOrigin(origin: string): URL | null {
   const u = new URL(origin);
   if (u.protocol !== "https:" || !u.hostname.endsWith("circle.ms")) {
@@ -35,10 +48,18 @@ export const GET: APIRoute = async ({ request, locals }) => {
     COMINAVI_OAUTH_CIRCLEMS_CLIENT_SECRET,
   } = locals.runtime.env;
 
+  console.info("env:", {
+    COMINAVI_CIRCLEMS_ORIGIN,
+    "len(COMINAVI_OAUTH_CIRCLEMS_CLIENT_ID)":
+      COMINAVI_OAUTH_CIRCLEMS_CLIENT_ID.length,
+    "len(COMINAVI_OAUTH_CIRCLEMS_CLIENT_SECRET)":
+      COMINAVI_OAUTH_CIRCLEMS_CLIENT_SECRET.length,
+  });
+
   const origin = verifyCirclemsOrigin(COMINAVI_CIRCLEMS_ORIGIN);
   if (!origin) {
     return new Response(
-      "Invalid COMINAVI_CIRCLEMS_DOMAIN. Please check the configuration.",
+      "Invalid COMINAVI_CIRCLEMS_ORIGIN. Please check the configuration.",
       { status: 500 },
     );
   }
@@ -69,7 +90,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
   const text = await response.text();
   if (
     !response.ok ||
-    response.headers.get("Content-Type") !== "application/json"
+    (response.headers.get("Content-Type") ?? "").indexOf("application/json") ===
+      -1
   ) {
     console.error(
       "Failed to fetch token: server responded with non-JSON content. status:",
@@ -84,13 +106,30 @@ export const GET: APIRoute = async ({ request, locals }) => {
   }
 
   const json = JSON.parse(text);
-  if (isAuthorizationCodeResponse(json)) {
+
+  if (isAuthorizationCodeErrorResponse(json)) {
+    const s = new URLSearchParams();
+    s.set("status", "failed");
+    s.set("error", json.error);
+    if (json.error_description) {
+      s.set("error_description", json.error_description);
+    }
+    if (json.error_uri) {
+      s.set("error_uri", json.error_uri);
+    }
+    return Response.redirect(
+      `cominavi://oauth/circlems/landing?${s.toString()}`,
+      307,
+    );
+  }
+
+  if (isAuthorizationCodeSuccessResponse(json)) {
     const s = new URLSearchParams();
     s.set("status", "succeeded");
     s.set("state", state); // Pass the state back to the app
     s.set("token_type", json.token_type);
     s.set("access_token", json.access_token);
-    s.set("expires_in", json.expires_in);
+    s.set("expires_in", `${json.expires_in}`);
     s.set("refresh_token", json.refresh_token);
     return Response.redirect(
       `cominavi://oauth/circlems/landing?${s.toString()}`,

@@ -34,3 +34,4 @@ out/*
 !.yarn/versions
 
 .wrangler/*
+.dev.vars
