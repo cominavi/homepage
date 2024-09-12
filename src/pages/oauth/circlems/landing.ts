@@ -48,14 +48,6 @@ export const GET: APIRoute = async ({ request, locals }) => {
     COMINAVI_OAUTH_CIRCLEMS_CLIENT_SECRET,
   } = locals.runtime.env;
 
-  console.info("env:", {
-    COMINAVI_CIRCLEMS_ORIGIN,
-    "len(COMINAVI_OAUTH_CIRCLEMS_CLIENT_ID)":
-      COMINAVI_OAUTH_CIRCLEMS_CLIENT_ID.length,
-    "len(COMINAVI_OAUTH_CIRCLEMS_CLIENT_SECRET)":
-      COMINAVI_OAUTH_CIRCLEMS_CLIENT_SECRET.length,
-  });
-
   const origin = verifyCirclemsOrigin(COMINAVI_CIRCLEMS_ORIGIN);
   if (!origin) {
     return new Response(
@@ -89,9 +81,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
   const text = await response.text();
   if (
-    !response.ok ||
     (response.headers.get("Content-Type") ?? "").indexOf("application/json") ===
-      -1
+    -1
   ) {
     console.error(
       "Failed to fetch token: server responded with non-JSON content. status:",
