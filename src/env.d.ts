@@ -6,7 +6,7 @@ declare namespace App {
   interface Locals extends Runtime {
     runtime: {
       env: {
-        COMINAVI_CIRCLEMS_DOMAIN: string;
+        COMINAVI_CIRCLEMS_ORIGIN: string;
         COMINAVI_OAUTH_CIRCLEMS_CLIENT_ID: string;
         COMINAVI_OAUTH_CIRCLEMS_CLIENT_SECRET: string;
       };

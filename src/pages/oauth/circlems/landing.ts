@@ -20,24 +20,23 @@ function isAuthorizationCodeResponse(
     typeof response.refresh_token === "string"
   );
 }
-function checkCirclemsDomain(domain: string): boolean {
-  const u = new URL(domain);
-  return (
-    u.protocol === "https:" &&
-    u.hostname.endsWith(".circle.ms") &&
-    u.username === "" &&
-    u.password === ""
-  );
+function verifyCirclemsOrigin(origin: string): URL | null {
+  const u = new URL(origin);
+  if (u.protocol !== "https:" || !u.hostname.endsWith("circle.ms")) {
+    return null;
+  }
+  return u;
 }
 
 export const GET: APIRoute = async ({ request, locals }) => {
   const {
-    COMINAVI_CIRCLEMS_DOMAIN,
+    COMINAVI_CIRCLEMS_ORIGIN,
     COMINAVI_OAUTH_CIRCLEMS_CLIENT_ID,
     COMINAVI_OAUTH_CIRCLEMS_CLIENT_SECRET,
   } = locals.runtime.env;
 
-  if (!checkCirclemsDomain(COMINAVI_CIRCLEMS_DOMAIN)) {
+  const origin = verifyCirclemsOrigin(COMINAVI_CIRCLEMS_ORIGIN);
+  if (!origin) {
     return new Response(
       "Invalid COMINAVI_CIRCLEMS_DOMAIN. Please check the configuration.",
       { status: 500 },
@@ -54,21 +53,18 @@ export const GET: APIRoute = async ({ request, locals }) => {
     );
   }
 
-  const response = await fetch(
-    `https://${COMINAVI_CIRCLEMS_DOMAIN}/OAuth2/Token`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        grant_type: "authorization_code",
-        code: code,
-        client_id: COMINAVI_OAUTH_CIRCLEMS_CLIENT_ID,
-        client_secret: COMINAVI_OAUTH_CIRCLEMS_CLIENT_SECRET,
-      }),
+  const response = await fetch(new URL(`${origin.origin}/OAuth2/Token`), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
     },
-  );
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      code: code,
+      client_id: COMINAVI_OAUTH_CIRCLEMS_CLIENT_ID,
+      client_secret: COMINAVI_OAUTH_CIRCLEMS_CLIENT_SECRET,
+    }),
+  });
 
   const json: AuthorizationCodeResponse = await response.json();
   if (isAuthorizationCodeResponse(json)) {
