@@ -101,12 +101,13 @@ export const GET: APIRoute = async ({ request, locals }) => {
   if (isAuthorizationCodeErrorResponse(json)) {
     const s = new URLSearchParams();
     s.set("status", "failed");
-    s.set("error", json.error);
+    s.set("error", "authorization_code_error");
+    s.set("external_error", json.error);
     if (json.error_description) {
-      s.set("error_description", json.error_description);
+      s.set("external_error_description", json.error_description);
     }
     if (json.error_uri) {
-      s.set("error_uri", json.error_uri);
+      s.set("external_error_uri", json.error_uri);
     }
     return Response.redirect(
       `cominavi://oauth/circlems/landing?${s.toString()}`,
