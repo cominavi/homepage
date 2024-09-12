@@ -35,7 +35,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     COMINAVI_CIRCLEMS_DOMAIN,
     COMINAVI_OAUTH_CIRCLEMS_CLIENT_ID,
     COMINAVI_OAUTH_CIRCLEMS_CLIENT_SECRET,
-  } = locals.env;
+  } = locals.runtime.env;
 
   if (!checkCirclemsDomain(COMINAVI_CIRCLEMS_DOMAIN)) {
     return new Response(
