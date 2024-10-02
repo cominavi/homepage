@@ -101,6 +101,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
   if (isAuthorizationCodeErrorResponse(json)) {
     const s = new URLSearchParams();
     s.set("status", "failed");
+    s.set("state", state);
     s.set("error", "authorization_code_error");
     s.set("external_error", json.error);
     if (json.error_description) {
